@@ -94,112 +94,26 @@
       font-size: 1rem;
       min-height: 1.2rem;
     }
-    #restart {
+    #controls {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.5rem;
+      margin-top: 0.5rem;
+    }
+    #controls button {
       padding: 0.8rem 1.6rem;
       background: var(--accent);
       color: #f1f5f9;
       border: none;
       border-radius: 8px;
       cursor: pointer;
+    }
+    #controls button:disabled {
+      background: var(--button-bg-disabled);
+      cursor: not-allowed;
+    }
+    #next-round {
       display: none;
-      margi
-        #controls {97
-98
-99
-100
-101
-102
-103
-104
-105
-106
-107
-108
-109
-110
-111
-112
-113
-114
-115
-116
-117
-118
-119
-120
-121
-122
-123
-124
-125
-126
-127
-128
-129
-130
-131
-132
-133
-134
-135
-136
-137
-138
-139
-140
-141
-142
-143
-144
-145
-146
-147
-148
-149
-150
-151
-152
-153
-154
-155
-156
-157
-158
-159
-160
-161
-162
-163
-164
-165
-166
-167
-
-  display: flex;
-  flex-wrap: wrap;
-  gap: 0.5rem;
-  justify-content: center;
-  margin-top: 0.5rem;
-}
-#controls button {
-  padding: 0.6rem 1.2rem;
-  background: var(--button-bg);
-  color: #f1f5f9;
-  border: none;
-  border-radius: 8px;
-  cursor: pointer;
-}
-#controls button:hover:not(:disabled) {
-  background: var(--accent);
-}
-#controls button:disabled {
-  background: var(--button-bg-disabled);
-  cursor: not-allowed;
-}
-#next-round {
-  display: none;
-}
-n-top: 0.5rem;
     }
     .part { display: none; stroke: #f1f5f9; stroke-width: 4; stroke-linecap: round; }
   </style>
@@ -227,7 +141,12 @@ n-top: 0.5rem;
     <div id="word-display"></div>
     <div id="keyboard"></div>
     <div id="status"></div>
-    <button id="restart">Play Again</button>
+    <div id="controls">
+      <button id="show-hint">Show Hint</button>
+      <button id="reveal">Reveal Letter</button>
+      <button id="skip">Skip</button>
+      <button id="next-round">Next Round</button>
+    </div>
   </main>
   <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
   <script>
@@ -258,14 +177,19 @@ n-top: 0.5rem;
     const wordDisplay = document.getElementById('word-display');
     const keyboardElem = document.getElementById('keyboard');
     const statusElem = document.getElementById('status');
-    const restartBtn = document.getElementById('restart');
+    const showHintBtn = document.getElementById('show-hint');
+    const revealBtn = document.getElementById('reveal');
+    const skipBtn = document.getElementById('skip');
+    const nextRoundBtn = document.getElementById('next-round');
+    let currentHint = '';
     const parts = ['head','body','left-arm','right-arm','left-leg','right-leg'];
     function initGame() {
       const obj = WORDS[Math.floor(Math.random() * WORDS.length)];
       chosenWord = obj.word.toUpperCase();
       masked = Array.from(chosenWord).map(ch => (ch === ' ' ? ' ' : '_'));
       wrongGuesses = 0;
-      hintElem.textContent = obj.hint;
+      currentHint = obj.hint;
+      hintElem.textContent = '';
       wordDisplay.textContent = masked.join(' ');
       statusElem.textContent = `Lives: ${maxWrong - wrongGuesses}`;
       parts.forEach(part => {
@@ -279,7 +203,10 @@ n-top: 0.5rem;
         btn.addEventListener('click', () => handleGuess(letter, btn));
         keyboardElem.appendChild(btn);
       });
-      restartBtn.style.display = 'none';
+      showHintBtn.disabled = false;
+      revealBtn.disabled = false;
+      skipBtn.disabled = false;
+      nextRoundBtn.style.display = 'none';
     }
     function handleGuess(letter, btn) {
       btn.disabled = true;
@@ -317,7 +244,7 @@ n-top: 0.5rem;
       }
     }
     function celebrate() {
-      const duration = 2 * 1000;
+      const duration = 2000;
       const end = Date.now() + duration;
       (function frame() {
         confetti({
@@ -341,9 +268,41 @@ n-top: 0.5rem;
       Array.from(keyboardElem.children).forEach(btn => {
         btn.disabled = true;
       });
-      restartBtn.style.display = 'block';
+      showHintBtn.disabled = true;
+      revealBtn.disabled = true;
+      skipBtn.disabled = true;
+      nextRoundBtn.style.display = 'inline-block';
     }
-    restartBtn.addEventListener('click', initGame);
+    showHintBtn.addEventListener('click', () => {
+      hintElem.textContent = currentHint;
+      showHintBtn.disabled = true;
+    });
+    revealBtn.addEventListener('click', () => {
+      const hiddenIndices = [];
+      for (let i = 0; i < masked.length; i++) {
+        if (masked[i] === '_') hiddenIndices.push(i);
+      }
+      if (hiddenIndices.length > 0) {
+        const index = hiddenIndices[Math.floor(Math.random() * hiddenIndices.length)];
+        const letter = chosenWord[index];
+        masked[index] = letter;
+        wordDisplay.textContent = masked.join(' ');
+        Array.from(keyboardElem.children).forEach(btn => {
+          if (btn.textContent === letter) {
+            btn.disabled = true;
+          }
+        });
+        checkEnd();
+      }
+      if (!masked.includes('_')) {
+        revealBtn.disabled = true;
+      }
+    });
+    skipBtn.addEventListener('click', () => {
+      statusElem.textContent = `Skipped! The word was: ${chosenWord}`;
+      endGame();
+    });
+    nextRoundBtn.addEventListener('click', initGame);
     initGame();
   </script>
 </body>
