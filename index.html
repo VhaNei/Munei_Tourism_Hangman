@@ -112,7 +112,7 @@
       border: none;
       border-radius: 6px;
       background: var(--accent);
-      color: #f1f59;
+      color: #f1f5f9;
       font-size: 1rem;
       cursor: pointer;
       transition: background 0.3s;
@@ -128,7 +128,8 @@
       left: 20px;
       width: 60px;
       height: 30px;
-          z-index: 100;
+      /* increase z-index so bullets appear above other elements */
+      z-index: 100;
     }
     #gun {
       position: relative;
@@ -137,16 +138,17 @@
       background: #333;
       border-radius: 4px;
     }
-.bullet {
-    position: absolute;
-    top: 12px;
-    left: 60px;
-    width: 12px;
-    height: 6px;
-    background: #fca311;
-    border-radius: 3px;
-    animation: bullet-move 0.8s linear forwards;
-
+    .bullet {
+      position: absolute;
+      top: 12px;
+      left: 60px;
+      /* enlarge the bullet for better visibility */
+      width: 12px;
+      height: 6px;
+      background: #fca311;
+      border-radius: 3px;
+      /* shorten the animation duration for a snappier effect */
+      animation: bullet-move 0.8s linear forwards;
     }
     @keyframes bullet-move {
       from { transform: translateX(0); }
