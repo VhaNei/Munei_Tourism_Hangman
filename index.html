@@ -94,6 +94,10 @@
       font-size: 1rem;
       min-height: 1.2rem;
     }
+    #scoreboard {
+      font-size: 1rem;
+      min-height: 1.2rem;
+    }
     #controls {
       display: flex;
       flex-wrap: wrap;
@@ -141,6 +145,7 @@
     <div id="word-display"></div>
     <div id="keyboard"></div>
     <div id="status"></div>
+    <div id="scoreboard"></div>
     <div id="controls">
       <button id="reveal">Reveal Letter</button>
       <button id="skip">Skip</button>
@@ -176,11 +181,17 @@
     const wordDisplay = document.getElementById('word-display');
     const keyboardElem = document.getElementById('keyboard');
     const statusElem = document.getElementById('status');
+    const scoreboardElem = document.getElementById('scoreboard');
     const revealBtn = document.getElementById('reveal');
     const skipBtn = document.getElementById('skip');
     const nextRoundBtn = document.getElementById('next-round');
     let currentHint = '';
     const parts = ['head','body','left-arm','right-arm','left-leg','right-leg'];
+    let score = 0;
+    let highScore = parseInt(localStorage.getItem('hangmanHighScore')) || 0;
+    function updateScoreboard() {
+      scoreboardElem.textContent = 'Score: ' + score + ' | High Score: ' + highScore;
+    }
     function initGame() {
       const obj = WORDS[Math.floor(Math.random() * WORDS.length)];
       chosenWord = obj.word.toUpperCase();
@@ -204,6 +215,7 @@
       revealBtn.disabled = false;
       skipBtn.disabled = false;
       nextRoundBtn.style.display = 'none';
+      updateScoreboard();
     }
     function handleGuess(letter, btn) {
       btn.disabled = true;
@@ -234,10 +246,18 @@
       if (!masked.includes('_')) {
         statusElem.textContent = 'Congratulations! You guessed it!';
         celebrate();
+        score += 1;
+        if (score > highScore) {
+          highScore = score;
+          localStorage.setItem('hangmanHighScore', highScore.toString());
+        }
         endGame();
+        updateScoreboard();
       } else if (wrongGuesses >= maxWrong) {
         statusElem.textContent = `Game Over! The word was: ${chosenWord}`;
+        score = 0;
         endGame();
+        updateScoreboard();
       }
     }
     function celebrate() {
@@ -292,9 +312,12 @@
     });
     skipBtn.addEventListener('click', () => {
       statusElem.textContent = `Skipped! The word was: ${chosenWord}`;
+      score = 0;
       endGame();
+      updateScoreboard();
     });
     nextRoundBtn.addEventListener('click', initGame);
+    updateScoreboard();
     initGame();
   </script>
 </body>
