@@ -1,0 +1,403 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Munei's Tourism Students Hangman</title>
+<style>
+  :root{
+    --bg:#0f1226;
+    --card:#121633;
+    --card-2:#171b3e;
+    --acc:#7aa2ff;
+    --acc-2:#9ce6cf;
+    --text:#f7f8ff;
+    --muted:#aeb4d6;
+    --danger:#ff6b6b;
+    --ok:#38ef7d;
+  }
+  *{box-sizing:border-box}
+  html,body{margin:0;height:100%}
+  body{
+    font-family: ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial;
+    color:var(--text);
+    background:
+      radial-gradient(1200px 600px at 10% -10%, #24306a33, transparent 70%),
+      radial-gradient(1000px 600px at 110% 10%, #174a7a33, transparent 70%),
+      linear-gradient(180deg, #0b0e22 0%, #0f1226 100%);
+    min-height:100%;
+  }
+  header{
+    position:sticky; top:0; z-index:5;
+    padding:18px 14px;
+    background: linear-gradient(90deg,#10143a 0%,#10163f 50%,#0f143b 100%);
+    border-bottom:1px solid #2a3170;
+    box-shadow: 0 6px 20px rgba(0,0,0,.25);
+  }
+  .title-wrap{display:flex;align-items:center;gap:12px;max-width:1100px;margin:0 auto}
+  .logo{
+    width:44px;height:44px;border-radius:12px;
+    background:
+      conic-gradient(from 210deg, #7aa2ff, #9ce6cf, #b28cff, #7aa2ff);
+    display:grid;place-items:center;
+    box-shadow: 0 6px 18px rgba(122,162,255,.35), inset 0 0 14px #ffffff24;
+  }
+  .logo svg{filter:drop-shadow(0 2px 8px #0008)}
+  h1{margin:0;font-size:1.35rem;letter-spacing:.3px}
+  .tag{margin:2px 0 0;color:var(--muted);font-size:.95rem}
+
+  main{max-width:1100px;margin:0 auto;padding:16px}
+  .grid{display:grid;grid-template-columns:340px 1fr;gap:16px;align-items:start}
+  @media (max-width: 900px){.grid{grid-template-columns:1fr}}
+
+  .card{
+    background: linear-gradient(180deg, var(--card) 0%, var(--card-2) 100%);
+    border:1px solid #27306c;
+    border-radius:16px;
+    padding:14px;
+    box-shadow: 0 10px 30px rgba(0,0,0,.35), inset 0 0 0 1px #ffffff08;
+  }
+  .meta{display:flex;gap:18px;flex-wrap:wrap;align-items:center}
+  .chip{padding:6px 10px;border-radius:999px;background:#1a2152;border:1px solid #2c3aa3;color:#d9defb;box-shadow:inset 0 0 10px #0008}
+  .btn{border:0;border-radius:12px;padding:10px 14px;cursor:pointer;font-weight:600;letter-spacing:.2px}
+  .btn.primary{background:linear-gradient(90deg,#6e90ff,#89f5db);color:#0b0f2d;box-shadow:0 10px 24px rgba(137,245,219,.25)}
+  .btn.secondary{background:#1a2152;color:#dce3ff;border:1px solid #2f3ca6}
+  .btn.ghost{background:transparent;color:#dce3ff;border:1px dashed #3b489c}
+  .btn[disabled]{opacity:.55;cursor:not-allowed}
+
+  .hang-wrap{display:flex;justify-content:center;align-items:center;min-height:360px;background:#0f1537;border-radius:14px;border:1px solid #27306c}
+  svg{width:100%;height:auto;max-width:320px}
+  .line{stroke:#99a6ff;stroke-width:4;stroke-linecap:round;opacity:.8}
+  .rope{stroke:#ffd38a;stroke-width:4}
+  .part{stroke:#fff;stroke-width:4;stroke-linecap:round;filter:drop-shadow(0 0 8px #ffffff22)}
+  .hidden{opacity:0}
+
+  .word{font-family:"SF Mono","Consolas","Courier New",monospace;font-size:2.2rem;letter-spacing:.18em;
+        padding:10px 12px;border-radius:12px;background:#10174a;border:1px solid #2a3b9a;box-shadow:inset 0 0 18px #0008}
+  .hint{color:#9ce6cf;min-height:1.2em;margin:6px 0 2px}
+  .prev{color:#c8ccff;min-height:1.2em}
+  .kbd{display:grid;grid-template-columns:repeat(10,1fr);gap:8px;margin-top:10px}
+  .key{padding:12px;border-radius:10px;background:#0f1537;border:1px solid #2a3a99;color:#e9edff;cursor:pointer;
+       text-transform:uppercase;transition:transform .08s ease, box-shadow .18s ease}
+  .key:hover{transform:translateY(-2px);box-shadow:0 8px 20px rgba(0,0,0,.3)}
+  .key[disabled]{opacity:.5;filter:grayscale(.3);cursor:not-allowed}
+
+  .toast{
+    position:fixed; inset:0; display:none; place-items:center; z-index:20;
+    background:linear-gradient(#0008,#0008);
+  }
+  .toast.show{display:grid; animation:fade .2s ease}
+  @keyframes fade{from{opacity:0}to{opacity:1}}
+  .modal{
+    background:linear-gradient(180deg,#12183f,#0f1333);
+    border:1px solid #2c3aa3;border-radius:18px;padding:18px;max-width:520px;width:92%;
+    text-align:center; box-shadow:0 20px 50px rgba(0,0,0,.55), inset 0 0 0 1px #ffffff10;
+  }
+  .badge{
+    width:88px;height:88px;margin:0 auto 10px;border-radius:50%;
+    background:conic-gradient(from 220deg,#89f5db,#7aa2ff,#b28cff,#89f5db);
+    display:grid;place-items:center;box-shadow:0 12px 40px rgba(122,162,255,.25);
+  }
+  .badge-inner{width:76px;height:76px;border-radius:50%;background:#10174a;border:1px solid #2840a8;display:grid;place-items:center}
+  .badge svg{filter:drop-shadow(0 3px 8px #000a)}
+
+  canvas#confetti{position:fixed;inset:0;pointer-events:none;z-index:15}
+
+  footer{color:#aeb4d6;text-align:center;padding:16px}
+  small{opacity:.75}
+</style>
+</head>
+<body>
+<canvas id="confetti"></canvas>
+<header>
+  <div class="title-wrap">
+    <div class="logo" aria-hidden="true">
+      <svg width="26" height="26" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+        <path d="M3 17c3-2 6-2 9 0 3-2 6-2 9 0" stroke="#fff" stroke-width="1.6" stroke-linecap="round"/>
+        <path d="M7 14.5c.6-2.4 2.6-4.5 5-5.3 2.8-1 6 .2 7.5 2.3" stroke="#9ce6cf" stroke-width="1.6" stroke-linecap="round"/>
+        <path d="M6 9l2-3 2 3" stroke="#ffd38a" stroke-width="1.6" stroke-linecap="round"/>
+        <circle cx="20" cy="6" r="2" fill="#7aa2ff"/>
+      </svg>
+    </div>
+    <div>
+      <h1>Munei's Tourism Students Hangman</h1>
+      <div class="tag">Learn tourism product development terms the fun way</div>
+    </div>
+  </div>
+</header>
+
+<main class="grid">
+  <section class="card hang-wrap" aria-label="Hangman Graphic">
+    <svg viewBox="0 0 200 200" aria-hidden="true">
+      <defs>
+        <linearGradient id="beam" x1="0" y1="0" x2="1" y2="0">
+          <stop offset="0" stop-color="#7aa2ff"/><stop offset="1" stop-color="#b28cff"/>
+        </linearGradient>
+      </defs>
+      <line x1="10" y1="190" x2="190" y2="190" class="line"/>
+      <line x1="40" y1="190" x2="40" y2="20" class="line"/>
+      <line x1="38" y1="20" x2="120" y2="20" class="line" stroke="url(#beam)"/>
+      <line x1="120" y1="20" x2="120" y2="40" class="rope"/>
+      <circle id="p-head" cx="120" cy="55" r="15" class="part hidden" />
+      <line id="p-body" x1="120" y1="70" x2="120" y2="110" class="part hidden" />
+      <line id="p-armL" x1="120" y1="80" x2="100" y2="100" class="part hidden" />
+      <line id="p-armR" x1="120" y1="80" x2="140" y2="100" class="part hidden" />
+      <line id="p-legL" x1="120" y1="110" x2="105" y2="135" class="part hidden" />
+      <line id="p-legR" x1="120" y1="110" x2="135" y2="135" class="part hidden" />
+    </svg>
+  </section>
+
+  <section class="card">
+    <div class="meta" style="margin-bottom:10px">
+      <span class="chip"><b>Lives:</b> <span id="lives">6</span></span>
+      <span class="chip"><b>Score:</b> <span id="score">0</span></span>
+      <span class="chip"><b>Round:</b> <span id="round">0</span></span>
+      <span class="chip"><b>Timer:</b> <span id="timer">120</span>s</span>
+      <button id="restart" class="btn ghost" title="Restart game">Restart</button>
+    </div>
+
+    <div class="hint" id="hint"></div>
+    <div class="word" id="word">_ _ _</div>
+    <div class="prev" id="prev"></div>
+
+    <div id="keyboard" class="kbd" role="group" aria-label="On-screen keyboard"></div>
+
+    <div style="margin-top:12px;display:flex;gap:8px;flex-wrap:wrap">
+      <button id="hintBtn" class="btn secondary">Hint</button>
+      <button id="skipBtn" class="btn secondary">Skip</button>
+      <button id="revealBtn" class="btn secondary">Reveal</button>
+      <button id="nextBtn" class="btn primary" disabled>Next Round</button>
+    </div>
+  </section>
+</main>
+
+<div class="toast" id="toast">
+  <div class="modal">
+    <div class="badge">
+      <div class="badge-inner" id="badgeInner">
+        <svg id="badgeIcon" width="40" height="40" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <path d="M5 12l4 4 10-10" stroke="#89f5db" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/>
+        </svg>
+      </div>
+    </div>
+    <h2 id="toastTitle" style="margin:6px 0 6px">Great job!</h2>
+    <p id="toastMsg" style="margin:0;color:#cfd6ff">You nailed that one.</p>
+    <div style="margin-top:12px">
+      <button class="btn primary" id="closeToast">Continue</button>
+    </div>
+  </div>
+</div>
+
+<footer><small>© <span id="year"></span> Munei's Tourism Students Hangman</small></footer>
+
+<script>
+// ------- Confetti (tiny, dependency‑free) -------
+(function(){
+  const cvs = document.getElementById('confetti');
+  const ctx = cvs.getContext('2d');
+  let W,H,particles=[],running=false,raf=null,timeout=null;
+  function resize(){W=window.innerWidth;H=window.innerHeight;cvs.width=W;cvs.height=H;}
+  window.addEventListener('resize',resize); resize();
+  function spawn(n=140){
+    particles=[];
+    for(let i=0;i<n;i++){
+      particles.push({
+        x:Math.random()*W, y:-10-Math.random()*H*0.4,
+        s:4+Math.random()*4, a:Math.random()*Math.PI*2,
+        v:2+Math.random()*3, w:0.02+Math.random()*0.06,
+        c:`hsl(${Math.floor(Math.random()*360)},90%,70%)`
+      });
+    }
+  }
+  function step(){
+    ctx.clearRect(0,0,W,H);
+    for(const p of particles){
+      p.y += p.v; p.a += p.w; const sway = Math.sin(p.a)*1.5;
+      ctx.save(); ctx.translate(p.x+sway, p.y); ctx.rotate(p.a*0.6);
+      ctx.fillStyle=p.c; ctx.fillRect(-p.s/2,-p.s/2,p.s,p.s);
+      ctx.restore();
+    }
+    if(particles.length && particles[0].y < H+20){raf=requestAnimationFrame(step);} else {running=false;}
+  }
+  window.fireConfetti = function(){ if(running) return; running=true; spawn(); step(); clearTimeout(timeout); timeout=setTimeout(()=>{ctx.clearRect(0,0,W,H); running=false;}, 2400); };
+})();
+
+// ------- Game Logic -------
+const DEFAULT_LIVES = 6, ROUND_TIME = 120;
+const TERMS = [
+  ["intangibility","Bought as an idea or dream; cannot be touched"],
+  ["inseparability","Consumed at the destination; cannot separate service from provider"],
+  ["perishability","Service cannot be stored; unused capacity is lost"],
+  ["heterogeneity","Human-delivered services vary; hard to standardize"],
+  ["seasonality","Tourism demand fluctuates by season"],
+  ["complementarity","Products depend on each other and are consumed as a package"],
+  ["identify a tourism product","Find a gap in the market for a new product"],
+  ["market perspective","Build around unfilled consumer needs"],
+  ["product perspective","Improve or diversify insufficient existing products"],
+  ["developer perspective","Create based on a unique developer vision"],
+  ["identify the need","Assess demand with market research and feasibility"],
+  ["telephone survey","Demand assessment via phone interviews"],
+  ["postal survey","Questionnaires sent by post"],
+  ["computer based survey","Online or computer-assisted surveys"],
+  ["in-house survey","On-site data collection at the business"],
+  ["face-to-face survey","Interviewer and respondent in person"],
+  ["secondary research","Use existing data sources for insights"],
+  ["resources","People, finances, equipment, facilities"],
+  ["physical resources","Facilities, land and equipment planned for demand"],
+  ["human resources","Recruit and deploy skilled employees"],
+  ["financial resources","Saved or borrowed funds to operate and grow"],
+  ["overdraft","Short-term bank credit to cover cash flow"],
+  ["instalment credit","Borrowed funds repaid over time"],
+  ["factoring","Sell receivables for immediate cash"],
+  ["term loans","Medium to long term financing"],
+  ["financial leasing","Access assets without buying them"],
+  ["supporting products","Essential goods/services for the core to function"],
+  ["facilitating products","Useful extras, not essential to sell the core"],
+  ["core products","Primary need satisfied, e.g., the hotel room"],
+  ["augmented products","Core + supporting + facilitating + design/beauty"],
+  ["suppliers and intermediaries","Partners who provide inputs or distribution"],
+  ["evaluate potential","Identify strengths and weaknesses of the business"],
+  ["swot analysis","Strengths, Weaknesses, Opportunities, Threats"],
+  ["pestel analysis","External: Political, Economic, Social, Tech, Environmental, Legal"],
+  ["business plan","Detailed report: who, what, where, how, when"],
+  ["marketing and launching","Plan and introduce the product to market"],
+  ["product","Design to meet tourist needs across product levels"],
+  ["place","Choose accessible locations close to markets"],
+  ["price","Cover costs, ensure profit, remain affordable"],
+  ["promotion","Advertising, PR, sales promotions, exhibitions, personal selling"],
+  ["monitor and evaluate","Assess economic, social and environmental impacts regularly"],
+  ["value chain","Services start before travel and end on return home"],
+  ["variability","Performance differences due to industry heterogeneity and links"],
+  ["destination competitiveness","Ability to satisfy tourists versus other places"]
+];
+
+let lives, score=0, round=0, timeLeft, timer=null, current=null, guessed=new Set();
+const livesEl = document.getElementById('lives');
+const scoreEl = document.getElementById('score');
+const roundEl = document.getElementById('round');
+const timerEl = document.getElementById('timer');
+const wordEl = document.getElementById('word');
+const hintEl = document.getElementById('hint');
+const prevEl = document.getElementById('prev');
+const kbEl = document.getElementById('keyboard');
+const toast = document.getElementById('toast');
+const toastTitle = document.getElementById('toastTitle');
+const toastMsg = document.getElementById('toastMsg');
+const badgeInner = document.getElementById('badgeInner');
+const badgeIcon = document.getElementById('badgeIcon');
+const nextBtn = document.getElementById('nextBtn');
+
+document.getElementById('year').textContent = new Date().getFullYear();
+
+function normalize(s){return s.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'').replace(/[^a-z0-9]/g,'');}
+
+function newRound(){
+  guessed.clear();
+  lives = DEFAULT_LIVES;
+  timeLeft = ROUND_TIME;
+  current = randomTerm();
+  round++;
+  updateMeta();
+  drawWord();
+  resetHangman();
+  resetKB();
+  startTimer();
+  hintEl.textContent = "";
+  prevEl.textContent = "";
+  nextBtn.disabled = true;
+}
+
+function randomTerm(){
+  const [t,h] = TERMS[Math.floor(Math.random()*TERMS.length)];
+  return {display:t, norm:normalize(t), hint:h||""};
+}
+
+function drawWord(reveal=false){
+  const letters = current.display.split('');
+  const s = letters.map(ch => /[a-z0-9]/i.test(ch) ? ((reveal||guessed.has(normalize(ch)))? ch : "•") : ch).join(' ');
+  wordEl.textContent = s;
+}
+
+function buildKB(){
+  kbEl.innerHTML = "";
+  "abcdefghijklmnopqrstuvwxyz".split("").forEach(k=>{
+    const b=document.createElement('button');
+    b.className='key'; b.textContent=k;
+    b.addEventListener('click',()=>guess(k,b));
+    kbEl.appendChild(b);
+  });
+}
+function resetKB(){[...kbEl.querySelectorAll('.key')].forEach(b=>b.disabled=false);}
+
+function guess(letter, btn){
+  if(!current) return;
+  if(btn) btn.disabled=true;
+  const inWord = current.norm.includes(letter);
+  if(inWord){
+    guessed.add(letter);
+    drawWord();
+    if(isComplete()) win();
+  }else{
+    lives--; updateMeta(); drawNextPart(); if(lives<=0) lose();
+  }
+}
+
+function isComplete(){
+  for(const ch of new Set(current.norm.split(''))){
+    if(/[a-z0-9]/.test(ch) && !guessed.has(ch)) return false;
+  }
+  return true;
+}
+
+function celebrateWin(points){
+  fireConfetti();
+  showToast("Great job!", `✔ ${current.display} (+${points} pts)`, true);
+}
+function showToast(title, msg, win=true){
+  toastTitle.textContent = title; toastMsg.textContent = msg;
+  badgeInner.style.borderColor = win ? "#1bd8b0" : "#ff8383";
+  badgeIcon.innerHTML = win
+    ? '<path d="M5 12l4 4 10-10" stroke="#89f5db" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/>'
+    : '<path d="M6 6l12 12M18 6L6 18" stroke="#ff9d9d" stroke-width="2.2" stroke-linecap="round"/>';
+  toast.classList.add('show');
+}
+document.getElementById('closeToast').onclick = ()=>{toast.classList.remove('show'); if(nextBtn.disabled===false) nextBtn.focus();};
+
+function win(){
+  stopTimer();
+  const gained = 100 + Math.floor(timeLeft/5);
+  score += gained;
+  prevEl.textContent = "✔ Correct: " + current.display + " (+"+gained+")";
+  celebrateWin(gained);
+  nextBtn.disabled = false;
+  current = null; updateMeta();
+}
+function lose(){
+  stopTimer();
+  prevEl.textContent = "✖ The word was: " + current.display;
+  showToast("Round over", "✖ " + current.display, false);
+  nextBtn.disabled = false;
+  current = null; drawWord(true); updateMeta();
+}
+
+function updateMeta(){livesEl.textContent=lives;scoreEl.textContent=score;roundEl.textContent=round;timerEl.textContent=timeLeft;}
+function startTimer(){stopTimer(); timer=setInterval(()=>{timeLeft--; timerEl.textContent=timeLeft; if(timeLeft<=0){clearInterval(timer); lose();}},1000);}
+function stopTimer(){if(timer){clearInterval(timer); timer=null;}}
+
+const parts=['p-head','p-body','p-armL','p-armR','p-legL','p-legR'];
+function resetHangman(){parts.forEach(id=>document.getElementById(id).classList.add('hidden'));}
+function drawNextPart(){const idx = DEFAULT_LIVES - lives - 1; if(idx>=0 && idx<parts.length){const el=document.getElementById(parts[idx]); el.classList.remove('hidden'); el.animate([{transform:'scale(0.6)',opacity:.2},{transform:'scale(1)',opacity:1}],{duration:180,easing:'ease-out'});}}
+
+document.getElementById('hintBtn').onclick=()=>{hintEl.textContent = current?.hint? ("Hint: "+current.hint):"No hint";};
+document.getElementById('skipBtn').onclick=()=>{if(!current) return; prevEl.textContent="↷ Skipped: "+current.display; stopTimer(); current=null; drawWord(true); nextBtn.disabled=false;};
+document.getElementById('revealBtn').onclick=()=>{if(!current) return; drawWord(true); prevEl.textContent="👁 Revealed: "+current.display; stopTimer(); current=null; nextBtn.disabled=false;};
+document.getElementById('restart').onclick=()=>{score=0; round=0; newRound();};
+nextBtn.onclick=()=>{toast.classList.remove('show'); newRound();};
+
+document.addEventListener('keydown',e=>{const k=e.key.toLowerCase(); if(/^[a-z]$/.test(k)){const btn=[...kbEl.querySelectorAll('.key')].find(b=>b.textContent===k); guess(k,btn);} else if(k==='enter' && !nextBtn.disabled){nextBtn.click();}});
+
+buildKB();
+newRound();
+</script>
+</body>
+</html>
