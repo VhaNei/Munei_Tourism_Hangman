@@ -1,0 +1,214 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Munei's Tourism Students Hangman</title>
+  <style>
+    /* Basic reset */
+    * {
+      box-sizing: border-box;
+    }
+    body {
+      margin: 0;
+      padding: 0;
+      font-family: Arial, Helvetica, sans-serif;
+      background: linear-gradient(135deg, #0e254e 0%, #103665 100%);
+      color: #fff;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      min-height: 100vh;
+    }
+    header {
+      width: 100%;
+      padding: 1.2rem;
+      text-align: center;
+      background: rgba(255, 255, 255, 0.1);
+      backdrop-filter: blur(5px);
+      position: sticky;
+      top: 0;
+      z-index: 10;
+    }
+    header h1 {
+      margin: 0;
+      font-size: 1.6rem;
+    }
+    #game-container {
+      flex: 1;
+      width: 100%;
+      max-width: 500px;
+      padding: 20px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+    }
+    #word-display {
+      font-size: 2rem;
+      letter-spacing: .5rem;
+      margin: 1.5rem 0;
+      word-break: break-all;
+    }
+    #hint {
+      margin-bottom: 1rem;
+      font-size: 0.9rem;
+      opacity: 0.8;
+    }
+    #keyboard {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(40px, 1fr));
+      gap: 0.5rem;
+      width: 100%;
+    }
+    #keyboard button {
+      padding: 10px;
+      border: none;
+      border-radius: 6px;
+      background: #1e3a8a;
+      color: #fff;
+      font-size: 1rem;
+      cursor: pointer;
+      transition: background 0.3s;
+    }
+    #keyboard button:disabled {
+      background: #4b4b4b;
+      cursor: not-allowed;
+    }
+    #status {
+      margin-top: 1.5rem;
+      text-align: center;
+      font-size: 1rem;
+    }
+    #restart {
+      margin-top: 1.5rem;
+      padding: 0.8rem 1.6rem;
+      border: none;
+      border-radius: 8px;
+      background: #2563eb;
+      color: #fff;
+      font-size: 1rem;
+      cursor: pointer;
+    }
+    @media (max-width: 480px) {
+      #word-display {
+        font-size: 1.4rem;
+        letter-spacing: .3rem;
+      }
+      #keyboard button {
+        font-size: 0.8rem;
+        padding: 8px;
+      }
+    }
+  </style>
+</head>
+<body>
+  <header>
+    <h1>Munei's Tourism Students Hangman</h1>
+  </header>
+  <div id="game-container">
+    <div id="hint">Hint will appear here</div>
+    <div id="word-display"></div>
+    <div id="keyboard"></div>
+    <div id="status"></div>
+    <button id="restart" style="display:none;">Play Again</button>
+  </div>
+
+  <script>
+    // Word list with hints extracted from Chapter 8 Tourism Product Development
+    const WORDS = [
+      { word: "intangible", hint: "Cannot be touched, bought as a dream or concept" },
+      { word: "inseparability", hint: "Consumed at the destination, inseparable from provider" },
+      { word: "perishability", hint: "If not used, the service is lost" },
+      { word: "heterogeneity", hint: "Services vary because humans serve humans" },
+      { word: "seasonality", hint: "Demand fluctuates with seasons" },
+      { word: "complementarity", hint: "Tourism products are consumed as packages" },
+      { word: "identify", hint: "Finding a market gap for a product" },
+      { word: "resources", hint: "People, finances, equipment, facilities" },
+      { word: "swot", hint: "Strengths, Weaknesses, Opportunities, Threats" },
+      { word: "pestel", hint: "Political, Economic, Social, Technological, Environmental, Legal" },
+      { word: "marketingmix", hint: "Combination of product, place, price, promotion" },
+      { word: "promotion", hint: "Activities like advertising and PR" },
+      { word: "launch", hint: "Introducing the product to the market" },
+      { word: "monitoring", hint: "Continuous evaluation of impacts" },
+      { word: "overdraft", hint: "Short-term credit facility" },
+      { word: "factoring", hint: "Selling receivables for immediate cash" },
+      { word: "leasing", hint: "Accessing assets without ownership" }
+    ];
+
+    let chosen;
+    let masked;
+    let lives;
+    const maxLives = 6;
+    const wordDisplay = document.getElementById('word-display');
+    const hintElem = document.getElementById('hint');
+    const statusElem = document.getElementById('status');
+    const keyboardElem = document.getElementById('keyboard');
+    const restartBtn = document.getElementById('restart');
+
+    function initGame() {
+      // Reset variables
+      const random = WORDS[Math.floor(Math.random() * WORDS.length)];
+      chosen = random.word.toUpperCase();
+      masked = Array.from(chosen).map(ch => (ch === ' ' ? ' ' : '_'));
+      lives = maxLives;
+      hintElem.textContent = random.hint;
+      statusElem.textContent = `Lives: ${lives}`;
+      restartBtn.style.display = 'none';
+      // Render word
+      renderWord();
+      // Reset keyboard
+      keyboardElem.innerHTML = '';
+      const letters = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ'.split('');
+      letters.forEach(letter => {
+        const btn = document.createElement('button');
+        btn.textContent = letter;
+        btn.addEventListener('click', () => handleGuess(letter));
+        keyboardElem.appendChild(btn);
+      });
+    }
+
+    function renderWord() {
+      wordDisplay.textContent = masked.join(' ');
+    }
+
+    function handleGuess(letter) {
+      // Disable button
+      const btn = Array.from(keyboardElem.children).find(b => b.textContent === letter);
+      if (btn) btn.disabled = true;
+      let correct = false;
+      chosen.split('').forEach((ch, idx) => {
+        if (ch === letter) {
+          masked[idx] = letter;
+          correct = true;
+        }
+      });
+      if (!correct) {
+        lives--;
+        statusElem.textContent = `Lives: ${lives}`;
+      } else {
+        renderWord();
+      }
+      checkGameEnd();
+    }
+
+    function checkGameEnd() {
+      if (!masked.includes('_')) {
+        statusElem.textContent = 'Congratulations! You guessed the word!';
+        endGame();
+      } else if (lives <= 0) {
+        statusElem.textContent = `Game Over! The word was: ${chosen}`;
+        endGame();
+      }
+    }
+
+    function endGame() {
+      Array.from(keyboardElem.children).forEach(btn => btn.disabled = true);
+      restartBtn.style.display = 'inline-block';
+    }
+
+    restartBtn.addEventListener('click', initGame);
+    // Initialize game on load
+    initGame();
+  </script>
+</body>
+</html>
