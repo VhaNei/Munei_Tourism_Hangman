@@ -142,7 +142,6 @@
     <div id="keyboard"></div>
     <div id="status"></div>
     <div id="controls">
-      <button id="show-hint">Show Hint</button>
       <button id="reveal">Reveal Letter</button>
       <button id="skip">Skip</button>
       <button id="next-round">Next Round</button>
@@ -177,7 +176,6 @@
     const wordDisplay = document.getElementById('word-display');
     const keyboardElem = document.getElementById('keyboard');
     const statusElem = document.getElementById('status');
-    const showHintBtn = document.getElementById('show-hint');
     const revealBtn = document.getElementById('reveal');
     const skipBtn = document.getElementById('skip');
     const nextRoundBtn = document.getElementById('next-round');
@@ -189,7 +187,7 @@
       masked = Array.from(chosenWord).map(ch => (ch === ' ' ? ' ' : '_'));
       wrongGuesses = 0;
       currentHint = obj.hint;
-      hintElem.textContent = '';
+      hintElem.textContent = currentHint;
       wordDisplay.textContent = masked.join(' ');
       statusElem.textContent = `Lives: ${maxWrong - wrongGuesses}`;
       parts.forEach(part => {
@@ -203,7 +201,6 @@
         btn.addEventListener('click', () => handleGuess(letter, btn));
         keyboardElem.appendChild(btn);
       });
-      showHintBtn.disabled = false;
       revealBtn.disabled = false;
       skipBtn.disabled = false;
       nextRoundBtn.style.display = 'none';
@@ -268,15 +265,10 @@
       Array.from(keyboardElem.children).forEach(btn => {
         btn.disabled = true;
       });
-      showHintBtn.disabled = true;
       revealBtn.disabled = true;
       skipBtn.disabled = true;
       nextRoundBtn.style.display = 'inline-block';
     }
-    showHintBtn.addEventListener('click', () => {
-      hintElem.textContent = currentHint;
-      showHintBtn.disabled = true;
-    });
     revealBtn.addEventListener('click', () => {
       const hiddenIndices = [];
       for (let i = 0; i < masked.length; i++) {
